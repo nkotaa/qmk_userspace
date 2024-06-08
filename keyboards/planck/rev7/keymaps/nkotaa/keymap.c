@@ -38,7 +38,7 @@ bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
         return false;
     }
     if (IS_SMART_LAYER_ON()) {
-        smart_layer_prelapse(keycode, get_last_keycode(), record);
+        smart_layer_elapse_preroutine(keycode, get_last_keycode(), record);
     }
     return true;
 }
@@ -53,7 +53,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (IS_SMART_LAYER_ON()) {
-        smart_layer_postlapse(keycode, record);
+        smart_layer_postlapse(keycode, get_mods(), record);
     }
 }
 

@@ -18,8 +18,8 @@ enum SmartSwitchMode {
     MODE_INVERSE
 };
 
-void smart_layer_prelapse(uint16_t, uint16_t, keyrecord_t*);
-void smart_layer_postlapse(uint16_t, keyrecord_t*);
+void smart_layer_elapse_preroutine(uint16_t, uint16_t, keyrecord_t*);
+void smart_layer_postlapse(uint16_t, bool, keyrecord_t*);
 bool process_record_smart_layer_kc(uint16_t, keyrecord_t*);
 void pre_process_sm_ext_kc(uint16_t, keyrecord_t*);
 
