@@ -13,6 +13,7 @@ void pre_process_sm_ext_kc(uint16_t keycode, keyrecord_t *record) {
     if (!IS_SMART_LAYER_ON()) {
         layer_on(_EXTEND);
         smart_switch_mode = MODE_OFF;
+        has_ext_post_elapsed = false;
     } else {
         smart_switch_mode = MODE_INVERSE;
     }
@@ -74,7 +75,6 @@ void smart_layer_postlapse(uint16_t keycode, bool has_mods, keyrecord_t *record)
     }
     if (has_ext_post_elapsed && !has_mods) {
         layer_off(_EXTEND);
-        has_ext_post_elapsed = false;
     }
 }
 
@@ -89,6 +89,8 @@ bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     case OSM_CTL:
         if (record->event.pressed) {
             smart_switch_mode = MODE_POST;
+            // need to manually remember for cluster-switching to work
+            set_last_keycode(keycode);
         }
         return true;
     case KC_RGHT ... KC_UP:
@@ -135,7 +137,8 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
     //    return true;
     //}
 
-    if (!record->event.pressed || get_mods() || smart_switch_mode == MODE_OFF) {
+    //if (!record->event.pressed || get_mods() || smart_switch_mode == MODE_OFF) {
+    if (!record->event.pressed || smart_switch_mode == MODE_OFF) {
         return;
     }
     if (smart_switch_mode == MODE_POST) {
