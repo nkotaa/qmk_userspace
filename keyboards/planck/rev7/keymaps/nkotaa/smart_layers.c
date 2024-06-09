@@ -5,15 +5,12 @@ static bool has_ext_post_elapsed = false;
 
 void pre_process_sm_ext_kc(uint16_t keycode, keyrecord_t *record) {
     assert(keycode == SM_EXT);
-    // only process smart layer actions once (on key press)
     if (!record->event.pressed) {
         return;
     }
 
     if (!IS_SMART_LAYER_ON()) {
         layer_on(_EXTEND);
-        smart_switch_mode = MODE_OFF;
-        has_ext_post_elapsed = false;
     } else {
         smart_switch_mode = MODE_INVERSE;
     }
@@ -39,12 +36,6 @@ bool is_same_cluster(uint16_t current_keycode, uint16_t last_keycode) {
             (current_keycode >= KC_RGHT && current_keycode <= KC_UP);
     case KC_1 ... KC_0:
         return current_keycode >= KC_1 && current_keycode <= KC_0;
-    case OSM_SFT:
-    case OSM_ALT:
-    case OSM_GUI:
-    case OSM_CTL:
-        return current_keycode == OSM_SFT || current_keycode == OSM_ALT ||
-            current_keycode == OSM_GUI || current_keycode == OSM_CTL;
     case KC_TAB:
         return current_keycode == KC_ENT ||
             current_keycode == last_keycode;
@@ -65,17 +56,20 @@ bool is_same_cluster(uint16_t current_keycode, uint16_t last_keycode) {
 //    return false;
 //}
 
-void smart_layer_postlapse(uint16_t keycode, bool has_mods, keyrecord_t *record) {
+// needs to be evaluated and executed on both key press and release to avoid lag
+void smart_layer_postlapse(uint16_t keycode, bool has_mods, bool has_last_mods, keyrecord_t *record) {
     if (smart_switch_mode != MODE_POST) {
-        return;
-    }
-    // postlapse is only executed on key release
-    if (record->event.pressed) {
         return;
     }
     if (has_ext_post_elapsed && !has_mods) {
         layer_off(_EXTEND);
+        smart_switch_mode = MODE_OFF;
+        has_ext_post_elapsed = false;
+        return;
     }
+    bool is_keycode_osm = keycode == OSM_SFT || keycode == OSM_ALT ||
+        keycode == OSM_GUI || keycode == OSM_CTL;
+    has_ext_post_elapsed = has_ext_post_elapsed || (has_last_mods && !is_keycode_osm);
 }
 
 // pay attention to whether to process these keys on press (event.pressed)
@@ -89,8 +83,6 @@ bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     case OSM_CTL:
         if (record->event.pressed) {
             smart_switch_mode = MODE_POST;
-            // need to manually remember for cluster-switching to work
-            set_last_keycode(keycode);
         }
         return true;
     case KC_RGHT ... KC_UP:
@@ -105,49 +97,24 @@ bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-//bool has_ext_elapsed(uint16_t current_keycode, uint16_t last_keycode, keyrecord_t *record) {
-//    switch (smart_switch_mode) {
-//    case MODE_PRE:
-//        return !is_same_cluster(current_keycode, last_keycode);
-//    case MODE_INVERSE:
-//        return is_same_cluster(current_keycode, last_keycode);
-//    case MODE_OFF:
-//    case MODE_POST:
-//    default:
-//        return false;
-//    }
-//}
-
-//bool will_ext_elapse(uint16_t current_keycode, uint16_t last_keycode, keyrecord_t *record) {
-//    if (smart_switch_mode != MODE_POST) {
-//        return false;
-//    }
-//
-//    return false;
-//    switch (last_keycode) {
-//    case KC_1 ... KC_0:
-//        return !is_same_cluster(current_keycode, last_keycode);
-//    default:
-//        return false;
-//    }
-//}
-
 void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keycode, keyrecord_t *record) {
     //if (HAS_EXT_TIMED_OUT()) {
     //    return true;
     //}
 
-    //if (!record->event.pressed || get_mods() || smart_switch_mode == MODE_OFF) {
     if (!record->event.pressed || smart_switch_mode == MODE_OFF) {
         return;
     }
     if (smart_switch_mode == MODE_POST) {
-        has_ext_post_elapsed = has_ext_post_elapsed || !is_same_cluster(current_keycode, last_keycode);
+        if (last_keycode >= KC_1 && last_keycode <= KC_0) {
+            has_ext_post_elapsed = has_ext_post_elapsed || !is_same_cluster(current_keycode, last_keycode);
+        }
         return;
     }
     bool has_ext_elapsed = (smart_switch_mode == MODE_PRE) ?
         !is_same_cluster(current_keycode, last_keycode) : is_same_cluster(current_keycode, last_keycode);
     if (has_ext_elapsed) {
         layer_off(_EXTEND);
+        smart_switch_mode = MODE_OFF;
     }
 }
