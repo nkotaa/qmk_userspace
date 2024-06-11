@@ -50,29 +50,23 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
     //    return true;
     //}
 
-    if (!record->event.pressed || smart_switch_mode == MODE_OFF || current_keycode == SM_EXT) {
+    if (current_keycode == SM_EXT) {
         return;
     }
+    if (!record->event.pressed || smart_switch_mode == MODE_OFF || smart_switch_mode == MODE_POST) {
+        return;
+    }
+
     bool has_ext_elapsed = false;
-    bool is_from_same_cluster = is_same_cluster(current_keycode, last_keycode);
-    switch (smart_switch_mode) {
-    case MODE_OFF:
-        return;
-    case MODE_POST:
-        return;
-    case MODE_INVERSE:
-        has_ext_elapsed = is_from_same_cluster;
-        break;
-    case MODE_PRE:
-        if (is_from_same_cluster) {
-            return;
-        }
-        if (is_escape_sequence(current_keycode, last_keycode)) {
+    if (is_escape_sequence(current_keycode, last_keycode)) {
+        if (smart_switch_mode == MODE_PRE) {
             smart_switch_mode = MODE_POST;
             return;
         }
         has_ext_elapsed = true;
-        break;
+    } else {
+        has_ext_elapsed = (smart_switch_mode == MODE_PRE) ?
+            !is_same_cluster(current_keycode, last_keycode) : is_same_cluster(current_keycode, last_keycode);
     }
     if (has_ext_elapsed) {
         layer_off(_EXTEND);
