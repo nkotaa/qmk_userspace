@@ -35,7 +35,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 bool pre_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (keycode == SM_EXT) {
         pre_process_sm_ext_kc(keycode, record);
-        return false;
+        return true;
     }
     if (IS_SMART_LAYER_ON()) {
         smart_layer_elapse_preroutine(keycode, get_last_keycode(), record);

@@ -53,9 +53,8 @@ bool process_record_custom_kc(uint16_t keycode, keyrecord_t *record) {
 
 bool remember_last_key_user(uint16_t keycode, keyrecord_t* record, uint8_t* remembered_mods) {
     switch (keycode) {
-    case SMART_EXTEND:
-        // to explore another possibility of returning false from post_process_smart_layer
-        //return false;
+    case SM_EXT:
+        return false;
     default:
         return true;
     }

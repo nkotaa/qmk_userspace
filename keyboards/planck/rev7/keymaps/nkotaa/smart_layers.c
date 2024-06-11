@@ -51,7 +51,7 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
     //    return true;
     //}
 
-    if (!record->event.pressed || smart_switch_mode == MODE_OFF) {
+    if (!record->event.pressed || smart_switch_mode == MODE_OFF || current_keycode == SM_EXT) {
         return;
     }
     bool has_ext_elapsed = false;
@@ -85,6 +85,10 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
 // pay attention to whether to process these keys on press (event.pressed)
 // or release (!event.pressed)
 bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
+    if (keycode == SM_EXT) {
+        return false;
+    }
+
     switch (keycode) {
     case OSM_SFT:
     case OSM_ALT:

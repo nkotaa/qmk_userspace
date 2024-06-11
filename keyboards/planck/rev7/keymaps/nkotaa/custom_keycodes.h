@@ -4,7 +4,6 @@
 #include QMK_KEYBOARD_H
 
 #include "alias.h"
-#include "smart_layers.h"
 
 enum custom_keycodes {
     PAREN_CLOSE = SAFE_RANGE,
