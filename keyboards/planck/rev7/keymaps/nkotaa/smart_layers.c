@@ -81,29 +81,43 @@ void process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
         if (!record->event.pressed && smart_switch_mode != MODE_POST) {
             smart_switch_mode = MODE_PRE;
         }
-        return true;
+        return;
+    case SM_EXT:
+        // ignore
+        return;
     default:
-        return false;
+        if (record->event.pressed) {
+            smart_switch_mode = MODE_OFF;
+        }
+        return;
     }
 }
 
-// needs to be evaluated and executed on both key press and release to avoid lag
+// needs to be executed on both key press and release to avoid lag
 void smart_layer_postlapse(uint16_t keycode, bool has_mods, bool has_last_mods, keyrecord_t *record) {
     if (keycode == SM_EXT) {
         return;
     }
 
+    if (smart_switch_mode == MODE_POST) {
+        if (has_mods) {
+            return;
+        }
+        layer_off(_EXTEND);
+        smart_switch_mode = MODE_OFF;
+        return;
+    }
+
+    if (record->event.pressed) {
+        return;
+    }
     bool is_keycode_osm = keycode == OSM_SFT || keycode == OSM_ALT ||
         keycode == OSM_GUI || keycode == OSM_CTL;
     if (has_last_mods && !is_keycode_osm) {
         smart_switch_mode = MODE_POST;
-    }
-    if (has_mods) {
-        return;
-    }
-    if (smart_switch_mode == MODE_POST) {
-        layer_off(_EXTEND);
-        smart_switch_mode = MODE_OFF;
-        return;
+        if (!has_mods) {
+            layer_off(_EXTEND);
+            smart_switch_mode = MODE_OFF;
+        }
     }
 }
