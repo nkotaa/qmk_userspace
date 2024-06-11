@@ -23,38 +23,22 @@ void pre_process_sm_ext_kc(uint16_t keycode, keyrecord_t *record) {
 //}
 
 bool is_same_cluster(uint16_t current_keycode, uint16_t last_keycode) {
-    if (current_keycode == SM_EXT) {
-        return true;
-    }
-
     switch (last_keycode) {
     case KC_RGHT ... KC_LEFT:
         return current_keycode == KC_BSPC || current_keycode == KC_DEL ||
             (current_keycode >= KC_RGHT && current_keycode <= KC_UP);
     case KC_DOWN ... KC_UP:
-        return current_keycode == KC_ENT ||
-            (current_keycode >= KC_RGHT && current_keycode <= KC_UP);
+        return (current_keycode >= KC_RGHT && current_keycode <= KC_UP);
     case KC_1 ... KC_0:
         return current_keycode >= KC_1 && current_keycode <= KC_0;
     case KC_TAB:
-        return current_keycode == KC_ENT ||
-            current_keycode == last_keycode;
+        return current_keycode == last_keycode;
     case KC_ENT ... KC_BSPC:
     case KC_DEL:
     default:
         return current_keycode == last_keycode;
     }
 }
-
-//bool has_esc_to_base(uint16_t keycode, keyrecord_t *record) {
-//    if (has_ext_post_elapsed) {
-//        return true;
-//    }
-//    if (get_last_mods()) {
-//        return !get_mods();
-//    }
-//    return false;
-//}
 
 // needs to be evaluated and executed on both key press and release to avoid lag
 void smart_layer_postlapse(uint16_t keycode, bool has_mods, bool has_last_mods, keyrecord_t *record) {
@@ -97,6 +81,16 @@ bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
+bool is_escape_sequence(uint16_t current_keycode, uint16_t last_keycode) {
+    switch (current_keycode) {
+    case KC_ENT:
+        return last_keycode == KC_DOWN || last_keycode == KC_UP ||
+            last_keycode == KC_TAB;
+    default:
+        return false;
+    }
+}
+
 void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keycode, keyrecord_t *record) {
     //if (HAS_EXT_TIMED_OUT()) {
     //    return true;
@@ -105,14 +99,31 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
     if (!record->event.pressed || smart_switch_mode == MODE_OFF) {
         return;
     }
-    if (smart_switch_mode == MODE_POST) {
+    bool has_ext_elapsed = false;
+    bool is_from_same_cluster = is_same_cluster(current_keycode, last_keycode);
+    switch (smart_switch_mode) {
+    case MODE_OFF:
+        return;
+    case MODE_POST:
         if (last_keycode >= KC_1 && last_keycode <= KC_0) {
-            has_ext_post_elapsed = has_ext_post_elapsed || !is_same_cluster(current_keycode, last_keycode);
+            has_ext_post_elapsed = has_ext_post_elapsed || !is_from_same_cluster;
         }
         return;
+    case MODE_INVERSE:
+        has_ext_elapsed = is_from_same_cluster;
+        break;
+    case MODE_PRE:
+        if (is_from_same_cluster) {
+            return;
+        }
+        if (is_escape_sequence(current_keycode, last_keycode)) {
+            smart_switch_mode = MODE_POST;
+            has_ext_post_elapsed = true;
+            return;
+        }
+        has_ext_elapsed = true;
+        break;
     }
-    bool has_ext_elapsed = (smart_switch_mode == MODE_PRE) ?
-        !is_same_cluster(current_keycode, last_keycode) : is_same_cluster(current_keycode, last_keycode);
     if (has_ext_elapsed) {
         layer_off(_EXTEND);
         smart_switch_mode = MODE_OFF;
