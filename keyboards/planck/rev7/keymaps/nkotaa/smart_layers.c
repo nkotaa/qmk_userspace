@@ -12,9 +12,7 @@ bool is_same_cluster(uint16_t current_keycode, uint16_t last_keycode) {
     case KC_1 ... KC_0:
         return (current_keycode >= KC_1 && current_keycode <= KC_0) ||
             current_keycode == KC_BSPC;
-    case KC_TAB:
-        return current_keycode == last_keycode;
-    case KC_ENT ... KC_BSPC:
+    case KC_ENT ... KC_TAB:
     case KC_DEL:
     default:
         return current_keycode == last_keycode;
@@ -50,9 +48,7 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
     //    return true;
     //}
 
-    if (current_keycode == SM_EXT) {
-        return;
-    }
+    assert(current_keycode != SM_EXT);
     if (!record->event.pressed || smart_switch_mode == MODE_OFF || smart_switch_mode == MODE_POST) {
         return;
     }
@@ -76,11 +72,7 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
 
 // pay attention to whether to process these keys on press (event.pressed)
 // or release (!event.pressed)
-bool process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
-    if (keycode == SM_EXT) {
-        return false;
-    }
-
+void process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
     case KC_1 ... KC_0:
     case KC_RGHT ... KC_UP:
