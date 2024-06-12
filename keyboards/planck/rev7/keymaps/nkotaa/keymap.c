@@ -51,7 +51,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 
 void post_process_record_user(uint16_t keycode, keyrecord_t *record) {
     if (IS_SMART_LAYER_ON()) {
-        smart_layer_postlapse(keycode, get_mods(), get_last_mods(), record);
+        smart_layer_postroutine(keycode, get_mods(), get_last_mods(), record);
     }
 }
 

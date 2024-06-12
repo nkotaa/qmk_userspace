@@ -31,6 +31,12 @@ bool is_escape_sequence(uint16_t current_keycode, uint16_t last_keycode) {
     }
 }
 
+void smart_layer_off(void) {
+    assert(smart_switch_mode != MODE_OFF);
+    layer_off(_EXTEND);
+    smart_switch_mode = MODE_OFF;
+}
+
 void pre_process_sm_ext_kc(uint16_t keycode, keyrecord_t *record) {
     assert(keycode == SM_EXT);
     if (!record->event.pressed) {
@@ -43,13 +49,15 @@ void pre_process_sm_ext_kc(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keycode, keyrecord_t *record) {
+void smart_layer_elapse_preroutine(uint16_t current_keycode,
+        uint16_t last_keycode, keyrecord_t *record) {
     //if (HAS_EXT_TIMED_OUT()) {
     //    return true;
     //}
 
     assert(current_keycode != SM_EXT);
-    if (!record->event.pressed || smart_switch_mode == MODE_OFF || smart_switch_mode == MODE_POST) {
+    if (!record->event.pressed || smart_switch_mode == MODE_OFF ||
+            smart_switch_mode == MODE_POST) {
         return;
     }
 
@@ -59,14 +67,15 @@ void smart_layer_elapse_preroutine(uint16_t current_keycode, uint16_t last_keyco
             smart_switch_mode = MODE_POST;
             return;
         }
-        has_ext_elapsed = true;
+        has_ext_elapsed = smart_switch_mode == MODE_INVERSE;
     } else {
         has_ext_elapsed = (smart_switch_mode == MODE_PRE) ?
-            !is_same_cluster(current_keycode, last_keycode) : is_same_cluster(current_keycode, last_keycode);
+            !is_same_cluster(current_keycode, last_keycode) :
+            is_same_cluster(current_keycode, last_keycode);
     }
+
     if (has_ext_elapsed) {
-        layer_off(_EXTEND);
-        smart_switch_mode = MODE_OFF;
+        smart_layer_off();
     }
 }
 
@@ -93,31 +102,30 @@ void process_record_smart_layer_kc(uint16_t keycode, keyrecord_t *record) {
     }
 }
 
-// needs to be executed on both key press and release to avoid lag
-void smart_layer_postlapse(uint16_t keycode, bool has_mods, bool has_last_mods, keyrecord_t *record) {
+// evaluated only on key release but executed on both key press and
+// release to minimise lag
+void smart_layer_postroutine(uint16_t keycode, bool has_mods,
+        bool has_last_mods, keyrecord_t *record) {
     if (keycode == SM_EXT) {
         return;
     }
 
     if (smart_switch_mode == MODE_POST) {
-        if (has_mods) {
-            return;
+        if (!has_mods) {
+            smart_layer_off();
         }
-        layer_off(_EXTEND);
-        smart_switch_mode = MODE_OFF;
         return;
     }
 
     if (record->event.pressed) {
         return;
     }
-    bool is_keycode_osm = keycode == OSM_SFT || keycode == OSM_ALT ||
-        keycode == OSM_GUI || keycode == OSM_CTL;
+    bool is_keycode_osm = keycode >= QK_ONE_SHOT_MOD &&
+        keycode <= QK_ONE_SHOT_MOD_MAX;
     if (has_last_mods && !is_keycode_osm) {
         smart_switch_mode = MODE_POST;
         if (!has_mods) {
-            layer_off(_EXTEND);
-            smart_switch_mode = MODE_OFF;
+            smart_layer_off();
         }
     }
 }
